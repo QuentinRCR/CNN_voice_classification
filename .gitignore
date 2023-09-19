@@ -1,0 +1,5 @@
+*.pdf
+training/**
+yes/**
+no/**
+.idea/**

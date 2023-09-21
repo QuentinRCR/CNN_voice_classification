@@ -4,6 +4,8 @@ import tensorflow as tf
 from keras import layers,utils
 import os
 
+print("Program start")
+
 signalLenght = 16000
 yesFilePath = "./yes"
 noFilePath = "./no"
@@ -36,7 +38,25 @@ values = np.array(values)
 label = np.array(label)
 label = utils.to_categorical(label, num_classes=2)
 
-# # Step 2: Build the 1D Neural Network
+
+#########################################################################
+tvalues = []
+tlabel = []
+for path in ["training/yes","training/yes"]:
+    for file in (os.listdir(path)):
+        signal = (extractArrayFromFileName(path+"/"+file))
+        if len(signal>signalLenght):
+            signal = signal[:signalLenght]
+        tvalues.append(signal)
+        tlabel.append(path != yesFilePath)
+
+tvalues = np.array(tvalues)
+tlabel = np.array(tlabel)
+tlabel = utils.to_categorical(tlabel, num_classes=2)
+##########################################################################
+
+
+# Step 2: Build the 1D Neural Network
 model = tf.keras.Sequential([
     layers.Input(shape=(signalLenght,1)),  # num_features is the size of your feature representation
     layers.Conv1D(filters=64, kernel_size=3, activation='relu'),
@@ -53,7 +73,14 @@ model.compile(optimizer='adam',
               loss='categorical_crossentropy',
               metrics=['accuracy'])
 
-model.fit(values, label, epochs=3)#, validation_data=(Y_values[33:40], N_values[33:40]))
+model_checkpoint_callback = tf.keras.callbacks.ModelCheckpoint(
+    filepath="tmp",
+    save_weights_only=True,
+    monitor='val_accuracy',
+    mode='max',
+    save_best_only=True)
+
+model.fit(values, label, epochs=10, validation_data=(tvalues,tlabel),callbacks=[model_checkpoint_callback])
 
 # Step 4: Save the weights
-model.save_weights('my_cnn_weights.h5')
+model.save_weights('bestweights.h5')
